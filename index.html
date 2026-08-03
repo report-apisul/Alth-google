@@ -181,18 +181,21 @@
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
-    
-    // URL CORRIGIDA PARA O SEU GITHUB PAGES
     const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
 
+    // Captura flexível de token da Microsoft (id_token ou access_token)
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
-      const idToken = params.get('id_token');
+      const idToken = params.get('id_token') || params.get('access_token');
 
       if (idToken) {
         window.history.replaceState({}, document.title, window.location.pathname);
-        obterDadosMicrosoft(idToken);
+        if (params.get('id_token')) {
+          obterDadosMicrosoftIdToken(idToken);
+        } else {
+          obterDadosMicrosoftGraph(idToken);
+        }
       }
     });
 
@@ -228,11 +231,11 @@
     }
 
     function fazerLoginMicrosoft() {
-      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=id_token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+email&response_mode=fragment&nonce=${Date.now()}`;
+      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=id_token+token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+profile+email+User.Read&response_mode=fragment&nonce=${Date.now()}`;
       window.location.href = authUrl;
     }
 
-    function obterDadosMicrosoft(idToken) {
+    function obterDadosMicrosoftIdToken(idToken) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
       msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Autenticado! Verificando e-mail...';
@@ -247,6 +250,24 @@
         else mostrarErro("Não foi possível identificar o e-mail da conta Microsoft.");
       } catch (err) {
         mostrarErro("Não foi possível ler a identidade retornada pela Microsoft.");
+      }
+    }
+
+    async function obterDadosMicrosoftGraph(accessToken) {
+      const msg = document.getElementById('mensagem-status');
+      msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
+      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Autenticado! Consultando perfil...';
+
+      try {
+        const res = await fetch('https://graph.microsoft.com/v1.0/me', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const data = await res.json();
+        const email = data.mail || data.userPrincipalName;
+        if (email) consultarPermissaoPlanilha(email);
+        else mostrarErro("Não foi possível identificar o e-mail da conta Microsoft.");
+      } catch (err) {
+        mostrarErro("Erro ao consultar os dados do perfil Microsoft.");
       }
     }
 
