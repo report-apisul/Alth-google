@@ -19,9 +19,6 @@
   <!-- SDK Oficial do Google -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- SDK Oficial da Microsoft (MSAL.js v2) -->
-  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
-
   <style>
     body { font-family: 'Inter', sans-serif; }
   </style>
@@ -31,10 +28,9 @@
   <!-- CONTÊINER DA APLICAÇÃO (SPA) -->
   <div class="w-full max-w-md">
 
-    <!-- VISÃO 1: TELA DE LOGIN AUTÊNTICA E SEGURA -->
+    <!-- VISÃO 1: TELA DE LOGIN -->
     <div id="screen-login" class="bg-slate-800 border border-slate-700/60 rounded-2xl shadow-2xl p-8 transition-all duration-300">
       
-      <!-- Logo / Identidade com a imagem Apisul -->
       <div class="text-center mb-8">
         <div class="flex items-center justify-center mb-5">
           <img src="https://raw.githubusercontent.com/repositorio-apisul/apisul/main/logo-apisul-branca.png" 
@@ -45,7 +41,7 @@
         <p class="text-slate-400 text-sm mt-1">Autenticação Única via Google ou Microsoft</p>
       </div>
 
-      <!-- BOTÕES DE AUTENTICAÇÃO SSO -->
+      <!-- BOTÕES DE AUTENTICAÇÃO -->
       <div class="space-y-3">
         <!-- Botão Google -->
         <button onclick="fazerLoginGoogle()" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-700 font-semibold py-3.5 px-4 rounded-xl border border-slate-300 transition-all duration-200 shadow-sm active:scale-[0.98]">
@@ -58,7 +54,7 @@
           Entrar com a conta Google
         </button>
 
-        <!-- Botão Microsoft -->
+        <!-- Botão Microsoft (OAuth Direto) -->
         <button onclick="fazerLoginMicrosoft()" class="w-full flex items-center justify-center gap-3 bg-[#2f2f2f] hover:bg-[#3d3d3d] text-white font-semibold py-3.5 px-4 rounded-xl border border-slate-600 transition-all duration-200 shadow-sm active:scale-[0.98]">
           <svg class="w-5 h-5" viewBox="0 0 23 23">
             <path fill="#f35325" d="M1 1h10v10H1z"/>
@@ -70,19 +66,16 @@
         </button>
       </div>
 
-      <!-- Feedback de Carregamento / Mensagem de Erro -->
       <div id="mensagem-status" class="mt-6 text-center text-sm min-h-[20px]"></div>
 
-      <!-- Rodapé de Privacidade -->
       <div class="mt-8 pt-6 border-t border-slate-700/50 text-center text-xs text-slate-500">
         <i class="fa-solid fa-lock mr-1"></i> Acesso restrito a e-mails cadastrados na planilha.
       </div>
     </div>
 
-    <!-- VISÃO 2: DASHBOARD (POVOADO APÓS SUCESSO NO LOGIN) -->
+    <!-- VISÃO 2: DASHBOARD -->
     <div id="screen-dashboard" class="hidden bg-slate-800 border border-slate-700/60 rounded-2xl shadow-2xl p-6 transition-all duration-300">
       
-      <!-- Cabeçalho com Usuário Logado -->
       <div class="flex items-center justify-between pb-6 border-b border-slate-700/60">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold">
@@ -100,7 +93,6 @@
         </button>
       </div>
 
-      <!-- Conteúdo do Dashboard Dinâmico -->
       <div class="mt-6 space-y-4">
         <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-700/40">
           <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Escopo de Visualização Atribuído</p>
@@ -121,42 +113,25 @@
   </div>
 
   <script>
-    // URL oficial da sua implantação do Apps Script
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
-
-    // Client ID do Google Cloud
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
-
-    // Client ID gerado no Microsoft Azure
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
-
-    // URL Exata da aplicação cadastrada no Azure
     const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
 
-    // Configuração oficial do MSAL para suporte a múltiplos locatários (Apisul, Mondelez, etc.)
-    const msalConfig = {
-      auth: {
-        clientId: MICROSOFT_CLIENT_ID,
-        authority: "https://login.microsoftonline.com/organizations", // Suporta contas corporativas externas
-        redirectUri: REDIRECT_URI
-      },
-      cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: false
+    // Ao carregar a página, verifica se a Microsoft retornou o token na URL (Hash)
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+
+      if (accessToken) {
+        // Limpa a URL para sumir o token
+        window.history.replaceState({}, document.title, window.location.pathname);
+        obterDadosMicrosoft(accessToken);
       }
-    };
+    });
 
-    let msalInstance = null;
-
-    async function initMSAL() {
-      if (!msalInstance) {
-        msalInstance = new msal.PublicClientApplication(msalConfig);
-        await msalInstance.initialize();
-      }
-    }
-    initMSAL().catch(console.error);
-
-    // FUNÇÃO 1: Autenticação via Google SSO
+    // LOGIN GOOGLE
     function fazerLoginGoogle() {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
@@ -167,7 +142,6 @@
         scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
         callback: async (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
-            msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Obtendo dados da conta Google...';
             try {
               const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                 headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
@@ -176,55 +150,49 @@
               if (googleUser && googleUser.email) {
                 consultarPermissaoPlanilha(googleUser.email);
               } else {
-                msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-                msg.innerText = "Não foi possível obter o e-mail da conta Google.";
+                mostrarErro("Não foi possível obter o e-mail da conta Google.");
               }
             } catch (err) {
-              msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-              msg.innerText = "Erro ao recuperar e-mail da conta Google.";
+              mostrarErro("Erro ao recuperar dados da conta Google.");
             }
           } else {
-            msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-            msg.innerText = "Autenticação do Google cancelada ou sem resposta.";
+            mostrarErro("Autenticação do Google cancelada.");
           }
-        },
-        error_callback: (err) => {
-          msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-          msg.innerText = "Ocorreu um erro ao abrir a janela de login do Google.";
         }
       });
-
       client.requestAccessToken();
     }
 
-    // FUNÇÃO 2: Autenticação via Microsoft SSO
-    async function fazerLoginMicrosoft() {
+    // LOGIN MICROSOFT (OAuth Direto via Endpoint /common/)
+    function fazerLoginMicrosoft() {
+      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+profile+email+User.Read&response_mode=fragment`;
+      window.location.href = authUrl;
+    }
+
+    // OBTER PERFIL DA MICROSOFT USANDO O TOKEN RETORNADO
+    async function obterDadosMicrosoft(accessToken) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
-      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Conectando à Microsoft...';
+      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Autenticado! Verificando e-mail...';
 
       try {
-        await initMSAL();
-        const loginResponse = await msalInstance.loginPopup({
-          scopes: ["User.Read", "openid", "profile", "email"],
-          redirectUri: REDIRECT_URI
+        const res = await fetch('https://graph.microsoft.com/v1.0/me', {
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
-        
-        const emailVerificado = loginResponse.account.username;
-        if (emailVerificado) {
-          consultarPermissaoPlanilha(emailVerificado);
+        const data = await res.json();
+        const email = data.mail || data.userPrincipalName;
+
+        if (email) {
+          consultarPermissaoPlanilha(email);
         } else {
-          msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-          msg.innerText = "Não foi possível identificar o e-mail da conta Microsoft.";
+          mostrarErro("Não foi possível identificar o e-mail da conta Microsoft.");
         }
-      } catch (error) {
-        console.error(error);
-        msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-        msg.innerText = "Autenticação da Microsoft cancelada ou não concluída.";
+      } catch (err) {
+        mostrarErro("Erro ao consultar os dados da Microsoft Graph.");
       }
     }
 
-    // FUNÇÃO 3: Consulta ao Apps Script (Planilha)
+    // VALIDAÇÃO NA PLANILHA (APPS SCRIPT)
     async function consultarPermissaoPlanilha(emailVerificado) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
@@ -242,13 +210,17 @@
           document.getElementById('user-perfil').innerText = data.usuario.perfil;
           document.getElementById('user-filtro').innerHTML = `<i class="fa-solid fa-filter text-xs"></i> <span>${data.usuario.filtro}</span>`;
         } else {
-          msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-          msg.innerText = data.mensagem || "Acesso negado: E-mail não cadastrado na planilha.";
+          mostrarErro(data.mensagem || "Acesso negado: E-mail não cadastrado na planilha.");
         }
       } catch (err) {
-        msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-        msg.innerText = "Erro de conexão ao validar o acesso na planilha.";
+        mostrarErro("Erro de conexão ao validar o acesso na planilha.");
       }
+    }
+
+    function mostrarErro(texto) {
+      const msg = document.getElementById('mensagem-status');
+      msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
+      msg.innerText = texto;
     }
 
     function logout() {
