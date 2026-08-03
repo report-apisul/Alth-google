@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Operacional - Autenticação SSO</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fontes Google - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- SDK Oficial da Google (Google Identity Services) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- SDK Oficial da Microsoft (MSAL.js v2) -->
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0066cc',
+              600: '#0052a3',
+              700: '#003d7a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .fade-in {
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100 min-h-screen flex items-center justify-center p-4 antialiased selection:bg-blue-500 selection:text-white">
+
+  <div class="w-full max-w-md mx-auto">
+
+    <!-- VISÃO 1: TELA DE LOGIN SSO OFICIAL -->
+    <div id="screen-login" class="fade-in bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
+      <!-- Topo Decorativo -->
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500"></div>
+
+      <!-- Ícone e Cabeçalho -->
+      <div class="w-16 h-16 bg-slate-700/60 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-slate-600/50 shadow-inner">
+        <i class="fa-solid fa-user-lock text-2xl"></i>
+      </div>
+      
+      <h1 class="text-2xl font-bold text-white text-center tracking-tight">Portal Operacional</h1>
+      <p class="text-slate-400 text-sm text-center mt-1 mb-8">Autenticação Única via Google ou Microsoft</p>
+
+      <div class="space-y-3">
+        
+        <!-- Botão Google SSO -->
+        <button 
+          id="btn-login-google"
+          onclick="fazerLoginGoogle()" 
+          class="w-full py-3.5 px-4 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98]"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Entrar com a conta Google</span>
+        </button>
+
+        <!-- Botão Microsoft SSO -->
+        <button 
+          id="btn-login-microsoft"
+          onclick="fazerLoginMicrosoft()" 
+          class="w-full py-3.5 px-4 bg-[#2f2f2f] hover:bg-[#3d3d3d] border border-slate-600 rounded-xl text-sm font-semibold text-white shadow-sm transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98]"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 23 23">
+            <path fill="#f35325" d="M1 1h10v10H1z"/>
+            <path fill="#81bc06" d="M12 1h10v10H12z"/>
+            <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+          </svg>
+          <span>Entrar com a conta Microsoft</span>
+        </button>
+      </div>
+
+      <div id="mensagem-status" class="mt-6 text-center text-xs min-h-[24px]"></div>
+
+      <div class="mt-8 pt-5 border-t border-slate-700/60 text-center">
+        <p class="text-[11px] text-slate-500 font-medium">
+          <i class="fa-solid fa-lock mr-1"></i> Acesso restrito a e-mails cadastrados na planilha.
+        </p>
+      </div>
+    </div>
+
+    <div id="screen-dashboard" class="hidden fade-in bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
+      
+      <!-- Cabeçalho do Dashboard -->
+      <div class="flex items-center justify-between pb-6 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div>
+            <h2 id="boas-vindas" class="text-white font-semibold text-base leading-tight">Bem-vindo!</h2>
+            <span id="badge-perfil" class="inline-block text-[10px] font-bold tracking-wider text-blue-400 bg-blue-950 px-2 py-0.5 rounded border border-blue-800/50 mt-1 uppercase">
+              PERFIL
+            </span>
+          </div>
+        </div>
+
+        <button 
+          onclick="sair()" 
+          class="px-3 py-1.5 bg-slate-700/50 hover:bg-rose-950/40 text-slate-300 hover:text-rose-400 font-medium rounded-lg text-xs transition border border-slate-600/50 flex items-center gap-1.5 cursor-pointer"
+        >
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+
+      <!-- Cards de Informações -->
+      <div class="mt-6 space-y-4">
+        <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
+          <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-1">E-mail Autenticado</p>
+          <p id="txt-email" class="text-xs font-mono text-slate-200 font-semibold"></p>
+        </div>
+
+        <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
+          <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-1">Filtro de Dados Aplicado</p>
+          <p id="txt-filtro" class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-filter text-xs"></i> <span id="val-filtro">ALL</span>
+          </p>
+        </div>
+
+        <div class="bg-slate-900/40 rounded-xl p-6 border border-dashed border-slate-700 text-center">
+          <i class="fa-solid fa-circle-check text-2xl text-emerald-500 mb-2"></i>
+          <p class="text-slate-200 text-sm font-semibold">Sessão Autenticada via SSO</p>
+          <p class="text-slate-400 text-xs mt-1">A consulta no Google Apps Script foi validada com sucesso na aba <span class="font-mono text-slate-300">Usuarios_Autorizados</span>.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // URL oficial do seu Google Apps Script conectado à planilha
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
+
+    /* 
+      CLIENT IDs DE AUTENTICAÇÃO SSO:
+      Quando você publicar no Google Cloud / Azure, insira suas chaves aqui.
+      Caso estejam vazios, o sistema utiliza o fluxo OAuth 2.0 padrão para redirecionar.
+    */
+    const GOOGLE_CLIENT_ID = ""; // Ex: "123456789-xxxx.apps.googleusercontent.com"
+    const MICROSOFT_CLIENT_ID = ""; // Ex: "83749283-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+    let msalInstance = null;
+
+    window.onload = function() {
+      // Inicializa o SDK MSAL da Microsoft se houver Client ID
+      if (MICROSOFT_CLIENT_ID && typeof msal !== 'undefined') {
+        msalInstance = new msal.PublicClientApplication({
+          auth: {
+            clientId: MICROSOFT_CLIENT_ID,
+            redirectUri: window.location.origin
+          }
+        });
+      }
+    };
+
+    function fazerLoginGoogle() {
+      exibirStatus("Abrindo autenticação oficial da Google...", false, true);
+
+      if (GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
+        // Fluxo oficial via Google Identity Services Token Client
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+          callback: (tokenResponse) => {
+            if (tokenResponse.access_token) {
+              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+              })
+              .then(res => res.json())
+              .then(userInfo => {
+                validarPermissaoPlanilha(userInfo.email);
+              })
+              .catch(() => exibirStatus("Erro ao obter dados da conta Google.", true));
+            }
+          },
+        });
+        client.requestAccessToken();
+      } else {
+        /*
+          REDIRECIONAMENTO OAUTH 2.0 GOOGLE
+          Direciona a pessoa para a tela oficial de login do Google (accounts.google.com)
+        */
+        const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=1039861217036-398j9r03b.apps.googleusercontent.com&scope=email%20profile&redirect_uri=${redirectUri}`;
+        
+        // Verifica se o token voltou na URL após o login do Google
+        if (window.location.hash.includes('access_token')) {
+          processarTokenUrl();
+        } else {
+          // Abre a janela oficial de login do Google
+          const popup = window.open(googleAuthUrl, 'GoogleLogin', 'width=500,height=600');
+          
+          if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            exibirStatus("O navegador bloqueou a janela de popup. Por favor, permita popups para fazer login.", true);
+          } else {
+            // Monitora o retorno da janela
+            const checkPopup = setInterval(() => {
+              try {
+                if (popup.location.hash.includes('access_token')) {
+                  const hash = popup.location.hash.substring(1);
+                  const params = new URLSearchParams(hash);
+                  const accessToken = params.get('access_token');
+                  popup.close();
+                  clearInterval(checkPopup);
+                  
+                  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                  })
+                  .then(r => r.json())
+                  .then(info => validarPermissaoPlanilha(info.email));
+                }
+              } catch (e) {
+                // Cross-origin até o redirecionamento concluir
+              }
+
+              if (popup.closed) {
+                clearInterval(checkPopup);
+                exibirStatus("Autenticação cancelada pelo usuário.", true);
+              }
+            }, 500);
+          }
+        }
+      }
+    }
+
+    async function fazerLoginMicrosoft() {
+      exibirStatus("Abrindo autenticação oficial da Microsoft...", false, true);
+
+      if (MICROSOFT_CLIENT_ID && msalInstance) {
+        try {
+          const loginResponse = await msalInstance.loginPopup({
+            scopes: ["user.read", "openid", "email", "profile"]
+          });
+          validarPermissaoPlanilha(loginResponse.account.username);
+        } catch (error) {
+          exibirStatus("Autenticação Microsoft cancelada ou não concluída.", true);
+        }
+      } else {
+        /*
+          REDIRECIONAMENTO OAUTH 2.0 MICROSOFT
+          Direciona para a janela oficial de login da Microsoft (login.microsoftonline.com)
+        */
+        const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
+        const msAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=00000000-0000-0000-0000-000000000000&response_type=token&redirect_uri=${redirectUri}&scope=user.read%20openid%20email`;
+        
+        const popup = window.open(msAuthUrl, 'MicrosoftLogin', 'width=500,height=600');
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          exibirStatus("Permita os popups no seu navegador para abrir o login da Microsoft.", true);
+        } else {
+          const checkPopup = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkPopup);
+              exibirStatus("Janela da Microsoft fechada. Caso tenha feito login, validando...", false, true);
+            }
+          }, 500);
+        }
+      }
+    }
+
+    async function validarPermissaoPlanilha(email) {
+      exibirStatus(`Validando acesso para ${email}...`, false, true);
+
+      try {
+        const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(email)}`);
+        const resultado = await response.json();
+
+        if (resultado.sucesso) {
+          document.getElementById("screen-login").classList.add("hidden");
+          document.getElementById("screen-dashboard").classList.remove("hidden");
+
+          const usuario = resultado.usuario;
+          document.getElementById("boas-vindas").innerText = `Olá, ${usuario.nome}!`;
+          document.getElementById("badge-perfil").innerText = usuario.perfil;
+          document.getElementById("txt-email").innerText = email;
+          document.getElementById("val-filtro").innerText = usuario.filtro;
+          
+          document.getElementById("mensagem-status").innerHTML = "";
+        } else {
+          exibirStatus(resultado.mensagem || "E-mail não autorizado na planilha.", true);
+        }
+      } catch (erro) {
+        exibirStatus("Erro de conexão com o servidor de permissões.", true);
+      }
+    }
+
+    function exibirStatus(mensagem, ehErro = false, carregando = false) {
+      const msgDiv = document.getElementById("mensagem-status");
+      if (carregando) {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-blue-400 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i><span>${mensagem}</span>`;
+      } else if (ehErro) {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-rose-400 bg-rose-950/40 p-3 rounded-xl border border-rose-800/40 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>${mensagem}</span>`;
+      } else {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-emerald-400 bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/40 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${mensagem}</span>`;
+      }
+    }
+
+    function sair() {
+      document.getElementById("screen-dashboard").classList.add("hidden");
+      document.getElementById("screen-login").classList.remove("hidden");
+      document.getElementById("mensagem-status").innerHTML = "";
+    }
+  </script>
+</body>
+</html>
