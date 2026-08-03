@@ -181,12 +181,10 @@
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
-    // Deve ser exatamente a URL deste portal publicado (sem / no final).
-    // Cadastre a mesma URL no Microsoft Entra ID como Redirect URI do tipo SPA.
-    const REDIRECT_URI = "https://portal-auth-google-microsoft.hut-ink-1mdelta-cany.chatgpt.site";
+    
+    // URL CORRIGIDA PARA O SEU GITHUB PAGES
+    const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
 
-    // Captura a identidade OIDC da Microsoft retornada via hash (sem Microsoft Graph).
-    // Assim, o portal não solicita User.Read nem qualquer permissão administrativa.
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
@@ -198,7 +196,6 @@
       }
     });
 
-    // LOGIN GOOGLE
     function fazerLoginGoogle() {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
@@ -230,14 +227,11 @@
       client.requestAccessToken();
     }
 
-    // LOGIN MICROSOFT: /common aceita contas corporativas, escolares e pessoais
-    // (Outlook, Hotmail, Live). OIDC devolve apenas a identidade autenticada.
     function fazerLoginMicrosoft() {
       const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=id_token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+email&response_mode=fragment&nonce=${Date.now()}`;
       window.location.href = authUrl;
     }
 
-    // Lê as claims do ID token localmente; não chama Graph e não pede User.Read.
     function obterDadosMicrosoft(idToken) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
@@ -256,7 +250,6 @@
       }
     }
 
-    // VALIDAÇÃO NA PLANILHA (APPS SCRIPT)
     async function consultarPermissaoPlanilha(emailVerificado) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
