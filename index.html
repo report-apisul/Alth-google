@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Operacional - Autenticação SSO</title>
+  <title>Portal Operacional - Apisul</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Fontes Google - Inter -->
+  <!-- Google Fonts - Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- SDK Oficial do Google -->
+  <!-- SDK do Google -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <script>
@@ -38,71 +38,48 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-
     .bg-apisul {
       background:
         radial-gradient(circle at 15% 20%, rgba(0,85,165,0.35), transparent 45%),
         radial-gradient(circle at 85% 80%, rgba(0,85,165,0.25), transparent 50%),
         linear-gradient(160deg, #001F3F 0%, #003366 55%, #001525 100%);
     }
-
     .glass-card {
       background: rgba(0, 51, 102, 0.35);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-
     .glow-ring {
       box-shadow: 0 0 0 1px rgba(0,85,165,0.15), 0 25px 60px -15px rgba(0,31,63,0.7), 0 0 80px -20px rgba(0,85,165,0.45);
     }
-
-    @keyframes float-slow {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-14px); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .float-slow { animation: float-slow 7s ease-in-out infinite; }
-
-    @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in-up { animation: fade-in-up 0.45s ease-out both; }
-
+    .fade-in { animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     ::selection { background: #0055A5; color: #fff; }
   </style>
 </head>
-<body class="bg-apisul min-h-screen flex items-center justify-center p-4 antialiased overflow-x-hidden">
+<body class="bg-apisul min-h-screen flex items-center justify-center p-4 antialiased overflow-x-hidden text-slate-100">
 
-  <!-- Glow decorativo de fundo -->
-  <div class="pointer-events-none fixed -top-32 -left-32 w-96 h-96 bg-apisul-primary/25 rounded-full blur-[100px] float-slow"></div>
-  <div class="pointer-events-none fixed -bottom-32 -right-24 w-[28rem] h-[28rem] bg-apisul-primary/20 rounded-full blur-[110px] float-slow" style="animation-delay:-3.5s"></div>
-
-  <!-- CONTÊINER DA APLICAÇÃO (SPA) -->
   <div class="relative w-full max-w-md">
 
-    <!-- VISÃO 1: TELA DE LOGIN -->
-    <div id="screen-login" class="glass-card glow-ring rounded-3xl p-8 sm:p-10 transition-all duration-300 fade-in-up">
+    <!-- TELA 1: LOGIN -->
+    <div id="screen-login" class="fade-in glass-card glow-ring rounded-3xl p-8 sm:p-10 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-apisul-primary to-emerald-500"></div>
 
-      <!-- Logo / Identidade -->
-      <div class="text-center mb-9">
-        <div class="flex items-center justify-center mb-6">
-          <div class="relative">
-            <div class="absolute inset-0 bg-apisul-primary/40 blur-xl rounded-full"></div>
-            <img src="https://raw.githubusercontent.com/repositorio-apisul/apisul/main/logo-apisul-branca.png"
-                 alt="Logo Apisul"
-                 class="relative h-12 w-auto object-contain drop-shadow-lg">
-          </div>
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-white/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-white/15 shadow-inner">
+          <i class="fa-solid fa-user-shield text-2xl"></i>
         </div>
         <h1 class="text-2xl font-bold text-white tracking-tight">Portal Operacional</h1>
-        <p class="text-slate-300/80 text-sm mt-2 font-medium">Autenticação única via Google ou Microsoft</p>
+        <p class="text-slate-300/80 text-sm mt-1">Autenticação Única via Google ou Microsoft</p>
       </div>
 
-      <!-- BOTÕES DE AUTENTICAÇÃO -->
       <div class="space-y-3.5">
         <!-- Botão Google -->
-        <button onclick="fazerLoginGoogle()"
-          class="group w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3.5 px-4 rounded-2xl border border-white/60 transition-all duration-200 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25 active:scale-[0.98]">
+        <button onclick="fazerLoginGoogle()" class="w-full py-3.5 px-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-2xl border border-white/60 shadow-md transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98]">
           <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -113,8 +90,7 @@
         </button>
 
         <!-- Botão Microsoft -->
-        <button onclick="fazerLoginMicrosoft()"
-          class="group w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white font-semibold py-3.5 px-4 rounded-2xl border border-white/15 hover:border-white/25 transition-all duration-200 shadow-lg shadow-black/20 active:scale-[0.98]">
+        <button onclick="fazerLoginMicrosoft()" class="w-full py-3.5 px-4 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-2xl border border-white/15 shadow-md transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98]">
           <svg class="w-5 h-5 shrink-0" viewBox="0 0 23 23">
             <path fill="#f35325" d="M1 1h10v10H1z"/>
             <path fill="#81bc06" d="M12 1h10v10H12z"/>
@@ -125,50 +101,54 @@
         </button>
       </div>
 
-      <!-- Feedback de Status -->
-      <div id="mensagem-status" class="mt-6 text-center text-sm min-h-[20px]"></div>
+      <div id="mensagem-status" class="mt-6 text-center text-xs min-h-[24px]"></div>
 
-      <!-- Rodapé -->
-      <div class="mt-8 pt-6 border-t border-white/10 text-center text-xs text-slate-400/90 flex items-center justify-center gap-1.5">
-        <i class="fa-solid fa-lock text-apisul-primary/90"></i>
-        <span>Acesso restrito a e-mails cadastrados na planilha</span>
+      <div class="mt-8 pt-5 border-t border-white/10 text-center">
+        <p class="text-[11px] text-slate-300 font-medium flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-lock text-blue-400"></i> Acesso restrito a e-mails cadastrados na planilha.
+        </p>
       </div>
     </div>
 
-    <!-- VISÃO 2: DASHBOARD -->
-    <div id="screen-dashboard" class="hidden glass-card glow-ring rounded-3xl p-6 sm:p-7 transition-all duration-300">
-
+    <!-- TELA 2: DASHBOARD -->
+    <div id="screen-dashboard" class="hidden fade-in glass-card glow-ring rounded-3xl p-6 sm:p-7 relative overflow-hidden">
+      
       <div class="flex items-center justify-between pb-6 border-b border-white/10">
         <div class="flex items-center gap-3">
-          <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-apisul-primary to-apisul-deep text-white flex items-center justify-center font-bold shadow-lg shadow-apisul-primary/30">
-            <i class="fa-solid fa-user"></i>
+          <div class="w-11 h-11 rounded-2xl bg-apisul-primary/20 text-blue-400 border border-apisul-primary/30 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-user-check"></i>
           </div>
           <div>
-            <h2 id="user-nome" class="text-white font-semibold leading-tight">Carregando...</h2>
-            <span id="user-perfil" class="inline-block text-[10px] font-bold tracking-wider text-sky-300 bg-apisul-primary/20 px-2 py-0.5 rounded-md border border-apisul-primary/40 mt-1 uppercase">
-              ---
+            <h2 id="boas-vindas" class="text-white font-semibold text-base leading-tight">Bem-vindo!</h2>
+            <span id="badge-perfil" class="inline-block text-[10px] font-bold tracking-wider text-sky-300 bg-apisul-primary/20 px-2.5 py-0.5 rounded-md border border-apisul-primary/40 mt-1 uppercase">
+              PERFIL
             </span>
           </div>
         </div>
-        <button onclick="logout()"
-          class="text-slate-300 hover:text-rose-300 text-sm font-medium transition-colors flex items-center gap-1.5 bg-white/5 hover:bg-rose-500/10 px-3 py-2 rounded-xl border border-white/10 hover:border-rose-400/30 active:scale-[0.98]">
+
+        <button onclick="sair()" class="px-3.5 py-2 bg-white/5 hover:bg-rose-500/10 text-slate-300 hover:text-rose-400 font-medium rounded-xl text-xs transition border border-white/10 hover:border-rose-400/30 flex items-center gap-1.5 cursor-pointer active:scale-[0.98]">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
-          <span class="hidden sm:inline">Sair</span>
+          <span>Sair</span>
         </button>
       </div>
 
       <div class="mt-6 space-y-4">
         <div class="bg-black/20 rounded-2xl p-4 border border-white/10">
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5">Escopo de visualização atribuído</p>
-          <div id="user-filtro" class="text-emerald-400 font-mono text-sm font-bold flex items-center gap-2">
-            <i class="fa-solid fa-filter text-xs"></i> <span>Aguardando dados...</span>
-          </div>
+          <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-1">E-mail Autenticado</p>
+          <p id="txt-email" class="text-xs font-mono text-slate-200 font-semibold"></p>
+        </div>
+
+        <div class="bg-black/20 rounded-2xl p-4 border border-white/10">
+          <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-1">Filtro de Dados Atribuído</p>
+          <p id="txt-filtro" class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-filter text-xs"></i> <span id="val-filtro">ALL</span>
+          </p>
         </div>
 
         <div class="bg-gradient-to-br from-apisul-primary/10 to-transparent rounded-2xl p-6 border border-dashed border-white/15 text-center">
-          <i class="fa-solid fa-chart-line text-3xl text-apisul-primary/70 mb-2"></i>
-          <p class="text-slate-200 font-medium">Autenticação realizada com sucesso!</p>
-          <p class="text-slate-400 text-xs mt-1">Os dados do dashboard serão exibidos aqui conforme as permissões da sua conta.</p>
+          <i class="fa-solid fa-circle-check text-2xl text-emerald-400 mb-2"></i>
+          <p class="text-slate-200 text-sm font-semibold">Sessão Autenticada com Sucesso</p>
+          <p class="text-slate-400 text-xs mt-1">As credenciais foram validadas perfeitamente no Google Apps Script.</p>
         </div>
       </div>
 
@@ -177,8 +157,8 @@
   </div>
 
   <script>
-    // URL atualizada com a nova implantação do Apps Script fornecida
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/library/d/1MpDrpC8Ualws_bD91KEVunQFVL761qxVGRRcoXPdHOHtH01Gnoc-Dnq3/9";
+    // URL EXATA DA SUA EXECUÇÃO WEB DO GOOGLE APPS SCRIPT (Terminada em /exec)
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
     const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
@@ -191,17 +171,15 @@
       if (idToken) {
         window.history.replaceState({}, document.title, window.location.pathname);
         if (params.get('id_token')) {
-          obterDadosMicrosoftIdToken(idToken);
+          extrairEmailMicrosoftIdToken(idToken);
         } else {
-          obterDadosMicrosoftGraph(idToken);
+          extrairEmailMicrosoftGraph(idToken);
         }
       }
     });
 
     function fazerLoginGoogle() {
-      const msg = document.getElementById('mensagem-status');
-      msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
-      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Conectando ao Google...';
+      exibirStatus("Conectando ao Google...", false, true);
 
       const client = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
@@ -214,15 +192,15 @@
               });
               const googleUser = await res.json();
               if (googleUser && googleUser.email) {
-                consultarPermissaoPlanilha(googleUser.email);
+                validarPermissaoPlanilha(googleUser.email);
               } else {
-                mostrarErro("Não foi possível obter o e-mail da conta Google.");
+                exibirStatus("Não foi possível obter o e-mail da conta Google.", true);
               }
             } catch (err) {
-              mostrarErro("Erro ao recuperar dados da conta Google.");
+              exibirStatus("Erro ao recuperar dados da conta Google.", true);
             }
           } else {
-            mostrarErro("Autenticação do Google cancelada.");
+            exibirStatus("Autenticação do Google cancelada.", true);
           }
         }
       });
@@ -230,83 +208,86 @@
     }
 
     function fazerLoginMicrosoft() {
+      exibirStatus("Redirecionando para Microsoft...", false, true);
       const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=id_token+token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+profile+email+User.Read&response_mode=fragment&nonce=${Date.now()}`;
       window.location.href = authUrl;
     }
 
-    function obterDadosMicrosoftIdToken(idToken) {
-      const msg = document.getElementById('mensagem-status');
-      msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
-      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Autenticado! Verificando e-mail...';
-
+    function extrairEmailMicrosoftIdToken(idToken) {
+      exibirStatus("Verificando credenciais Microsoft...", false, true);
       try {
         const parte = idToken.split('.')[1];
         const base64 = parte.replace(/-/g, '+').replace(/_/g, '/');
         const claims = JSON.parse(decodeURIComponent(atob(base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '='))
           .split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
         const email = claims.email || claims.preferred_username || claims.upn;
-        if (email) consultarPermissaoPlanilha(email);
-        else mostrarErro("Não foi possível identificar o e-mail da conta Microsoft.");
+        if (email) validarPermissaoPlanilha(email);
+        else exibirStatus("Não foi possível identificar o e-mail da conta Microsoft.", true);
       } catch (err) {
-        mostrarErro("Não foi possível ler a identidade retornada pela Microsoft.");
+        exibirStatus("Erro ao processar token de identificação Microsoft.", true);
       }
     }
 
-    async function obterDadosMicrosoftGraph(accessToken) {
-      const msg = document.getElementById('mensagem-status');
-      msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
-      msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Autenticado! Consultando perfil...';
-
+    async function extrairEmailMicrosoftGraph(accessToken) {
+      exibirStatus("Consultando perfil Microsoft...", false, true);
       try {
         const res = await fetch('https://graph.microsoft.com/v1.0/me', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         const data = await res.json();
         const email = data.mail || data.userPrincipalName;
-        if (email) consultarPermissaoPlanilha(email);
-        else mostrarErro("Não foi possível identificar o e-mail da conta Microsoft.");
+        if (email) validarPermissaoPlanilha(email);
+        else exibirStatus("Não foi possível identificar o e-mail da conta Microsoft.", true);
       } catch (err) {
-        mostrarErro("Erro ao consultar os dados do perfil Microsoft.");
+        exibirStatus("Erro ao consultar dados da API Microsoft.", true);
       }
     }
 
-    async function consultarPermissaoPlanilha(emailVerificado) {
-      const msg = document.getElementById('mensagem-status');
-      msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
-      msg.innerHTML = '<i class="fa-solid fa-shield-halved fa-spin mr-2"></i>Validando permissões na planilha...';
+    async function validarPermissaoPlanilha(email) {
+      exibirStatus(`Validando acesso para ${email}...`, false, true);
 
       try {
-        const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(emailVerificado)}`);
-        const textData = await response.text();
-        const data = JSON.parse(textData);
+        const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(email)}`);
+        const texto = await response.text();
+        const resultado = JSON.parse(texto);
 
-        if (data.sucesso) {
-          document.getElementById('screen-login').classList.add('hidden');
-          const dash = document.getElementById('screen-dashboard');
-          dash.classList.remove('hidden');
-          dash.classList.add('fade-in-up');
+        if (resultado.sucesso) {
+          document.getElementById("screen-login").classList.add("hidden");
+          document.getElementById("screen-dashboard").classList.remove("hidden");
 
-          document.getElementById('user-nome').innerText = data.usuario.nome;
-          document.getElementById('user-perfil').innerText = data.usuario.perfil;
-          document.getElementById('user-filtro').innerHTML = `<i class="fa-solid fa-filter text-xs"></i> <span>${data.usuario.filtro}</span>`;
+          const usuario = resultado.usuario;
+          document.getElementById("boas-vindas").innerText = `Olá, ${usuario.nome}!`;
+          document.getElementById("badge-perfil").innerText = usuario.perfil;
+          document.getElementById("txt-email").innerText = email;
+          document.getElementById("val-filtro").innerText = usuario.filtro;
+          
+          document.getElementById("mensagem-status").innerHTML = "";
         } else {
-          mostrarErro(data.mensagem || "Acesso negado: e-mail não cadastrado na planilha.");
+          exibirStatus(resultado.mensagem || "E-mail não autorizado na planilha.", true);
         }
-      } catch (err) {
-        mostrarErro("Erro de conexão ao validar o acesso na planilha.");
+      } catch (erro) {
+        exibirStatus("Erro de conexão ao validar o acesso na planilha do Apps Script.", true);
       }
     }
 
-    function mostrarErro(texto) {
-      const msg = document.getElementById('mensagem-status');
-      msg.className = "mt-6 text-center text-sm text-rose-300 font-medium bg-rose-500/10 p-3 rounded-xl border border-rose-400/25 flex items-center justify-center gap-2 fade-in-up";
-      msg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>${texto}</span>`;
+    function exibirStatus(mensagem, ehErro = false, carregando = false) {
+      const msgDiv = document.getElementById("mensagem-status");
+      if (carregando) {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-blue-300 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>${mensagem}</span>`;
+      } else if (ehErro) {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-rose-300 bg-rose-500/10 p-3 rounded-2xl border border-rose-400/25 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>${mensagem}</span>`;
+      } else {
+        msgDiv.className = "mt-6 text-center text-xs font-semibold text-emerald-300 bg-emerald-500/10 p-3 rounded-2xl border border-emerald-400/25 flex items-center justify-center gap-2";
+        msgDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${mensagem}</span>`;
+      }
     }
 
-    function logout() {
-      document.getElementById('screen-dashboard').classList.add('hidden');
-      document.getElementById('screen-login').classList.remove('hidden');
-      document.getElementById('mensagem-status').innerText = "";
+    function sair() {
+      document.getElementById("screen-dashboard").classList.add("hidden");
+      document.getElementById("screen-login").classList.remove("hidden");
+      document.getElementById("mensagem-status").innerHTML = "";
     }
   </script>
 </body>
