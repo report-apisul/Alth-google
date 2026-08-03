@@ -31,6 +31,7 @@
     <!-- VISÃO 1: TELA DE LOGIN -->
     <div id="screen-login" class="bg-slate-800 border border-slate-700/60 rounded-2xl shadow-2xl p-8 transition-all duration-300">
       
+      <!-- Logo / Identidade -->
       <div class="text-center mb-8">
         <div class="flex items-center justify-center mb-5">
           <img src="https://raw.githubusercontent.com/repositorio-apisul/apisul/main/logo-apisul-branca.png" 
@@ -54,7 +55,7 @@
           Entrar com a conta Google
         </button>
 
-        <!-- Botão Microsoft (OAuth Direto) -->
+        <!-- Botão Microsoft (OAuth Direto /organizations) -->
         <button onclick="fazerLoginMicrosoft()" class="w-full flex items-center justify-center gap-3 bg-[#2f2f2f] hover:bg-[#3d3d3d] text-white font-semibold py-3.5 px-4 rounded-xl border border-slate-600 transition-all duration-200 shadow-sm active:scale-[0.98]">
           <svg class="w-5 h-5" viewBox="0 0 23 23">
             <path fill="#f35325" d="M1 1h10v10H1z"/>
@@ -66,8 +67,10 @@
         </button>
       </div>
 
+      <!-- Feedback de Status -->
       <div id="mensagem-status" class="mt-6 text-center text-sm min-h-[20px]"></div>
 
+      <!-- Rodapé -->
       <div class="mt-8 pt-6 border-t border-slate-700/50 text-center text-xs text-slate-500">
         <i class="fa-solid fa-lock mr-1"></i> Acesso restrito a e-mails cadastrados na planilha.
       </div>
@@ -118,14 +121,13 @@
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
     const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
 
-    // Ao carregar a página, verifica se a Microsoft retornou o token na URL (Hash)
+    // Captura o token da Microsoft retornado via Hash na URL após o redirecionamento
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       const accessToken = params.get('access_token');
 
       if (accessToken) {
-        // Limpa a URL para sumir o token
         window.history.replaceState({}, document.title, window.location.pathname);
         obterDadosMicrosoft(accessToken);
       }
@@ -163,13 +165,13 @@
       client.requestAccessToken();
     }
 
-    // LOGIN MICROSOFT (OAuth Direto via Endpoint /common/)
+    // LOGIN MICROSOFT (Usa /organizations/ para aceitar Apisul, Mondelez e parceiros corporativos)
     function fazerLoginMicrosoft() {
-      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+profile+email+User.Read&response_mode=fragment`;
+      const authUrl = `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?client_id=${MICROSOFT_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid+profile+email+User.Read&response_mode=fragment`;
       window.location.href = authUrl;
     }
 
-    // OBTER PERFIL DA MICROSOFT USANDO O TOKEN RETORNADO
+    // OBTER DADOS MICROSOFT GRAPH
     async function obterDadosMicrosoft(accessToken) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
