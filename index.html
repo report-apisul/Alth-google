@@ -16,7 +16,7 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- SDK Oficial da Google (Google Identity Services) -->
+  <!-- SDK Oficial da Google Identity Services (GIS) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- SDK Oficial da Microsoft (MSAL.js v2) -->
@@ -28,15 +28,6 @@
         extend: {
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#f0f7ff',
-              100: '#e0effe',
-              500: '#0066cc',
-              600: '#0052a3',
-              700: '#003d7a',
-            }
           }
         }
       }
@@ -56,6 +47,17 @@
 <body class="bg-slate-900 font-sans text-slate-100 min-h-screen flex items-center justify-center p-4 antialiased selection:bg-blue-500 selection:text-white">
 
   <div class="w-full max-w-md mx-auto">
+
+    <!-- AVISO DE PROTOCOLO LOCAL (Se aberto via file://) -->
+    <div id="banner-file-protocol" class="hidden mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs leading-relaxed">
+      <div class="flex items-start gap-2.5">
+        <i class="fa-solid fa-triangle-exclamation text-base text-amber-400 shrink-0 mt-0.5"></i>
+        <div>
+          <strong class="block text-amber-200 font-semibold mb-1">Aviso de Execução Local (file://)</strong>
+          Os provedores oficiais de login (Google e Microsoft) bloqueiam requisições vindas do disco local. Para realizar a autenticação real, publique o arquivo no <strong>GitHub Pages</strong> (<code class="bg-slate-800 px-1 py-0.5 rounded text-amber-100">https://...</code>).
+        </div>
+      </div>
+    </div>
 
     <!-- VISÃO 1: TELA DE LOGIN SSO OFICIAL -->
     <div id="screen-login" class="fade-in bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
@@ -103,6 +105,9 @@
         </button>
       </div>
 
+      <!-- Container do Botão Google Nativo GIS (Invisível/Renderizado quando ID fornecido) -->
+      <div id="google-native-btn-container" class="mt-3 flex justify-center hidden"></div>
+
       <div id="mensagem-status" class="mt-6 text-center text-xs min-h-[24px]"></div>
 
       <div class="mt-8 pt-5 border-t border-slate-700/60 text-center">
@@ -112,6 +117,7 @@
       </div>
     </div>
 
+    <!-- VISÃO 2: DASHBOARD PÓS-LOGIN -->
     <div id="screen-dashboard" class="hidden fade-in bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
       
       <!-- Cabeçalho do Dashboard -->
@@ -137,7 +143,7 @@
         </button>
       </div>
 
-      <!-- Cards de Informações -->
+      <!-- Cards de Informações do Usuário -->
       <div class="mt-6 space-y-4">
         <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
           <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-1">E-mail Autenticado</p>
@@ -166,18 +172,24 @@
     // URL oficial do seu Google Apps Script conectado à planilha
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
 
-    /* 
-      CLIENT IDs DE AUTENTICAÇÃO SSO:
-      Quando você publicar no Google Cloud / Azure, insira suas chaves aqui.
-      Caso estejam vazios, o sistema utiliza o fluxo OAuth 2.0 padrão para redirecionar.
+    /*
+      ===================================================================
+      CONFIGURAÇÃO DE CLIENT IDs PARA AMBIENTE DE PRODUÇÃO (HTTPS / GITHUB PAGES)
+      ===================================================================
+      Quando você publicar no GitHub Pages, basta inserir os Client IDs gerados no Google Cloud e Azure abaixo.
     */
-    const GOOGLE_CLIENT_ID = ""; // Ex: "123456789-xxxx.apps.googleusercontent.com"
-    const MICROSOFT_CLIENT_ID = ""; // Ex: "83749283-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    const GOOGLE_CLIENT_ID = "";    // Ex: "123456789-xxxx.apps.googleusercontent.com"
+    const MICROSOFT_CLIENT_ID = ""; // Ex: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
     let msalInstance = null;
 
     window.onload = function() {
-      // Inicializa o SDK MSAL da Microsoft se houver Client ID
+      // Verifica se está rodando em arquivo local file://
+      if (window.location.protocol === 'file:') {
+        document.getElementById("banner-file-protocol").classList.remove("hidden");
+      }
+
+      // Inicialização da Microsoft MSAL
       if (MICROSOFT_CLIENT_ID && typeof msal !== 'undefined') {
         msalInstance = new msal.PublicClientApplication({
           auth: {
@@ -186,80 +198,61 @@
           }
         });
       }
+
+      // Inicialização do Google Identity Services
+      if (GOOGLE_CLIENT_ID && typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleJwtResponse
+        });
+      }
     };
 
     function fazerLoginGoogle() {
-      exibirStatus("Abrindo autenticação oficial da Google...", false, true);
+      if (window.location.protocol === 'file:') {
+        exibirStatus("Para autenticar via Google, envie o index.html ao GitHub Pages (https://)", true);
+        return;
+      }
+
+      exibirStatus("Conectando ao Google...", false, true);
 
       if (GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
-        // Fluxo oficial via Google Identity Services Token Client
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-          callback: (tokenResponse) => {
-            if (tokenResponse.access_token) {
-              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-              })
-              .then(res => res.json())
-              .then(userInfo => {
-                validarPermissaoPlanilha(userInfo.email);
-              })
-              .catch(() => exibirStatus("Erro ao obter dados da conta Google.", true));
-            }
-          },
-        });
-        client.requestAccessToken();
-      } else {
-        /*
-          REDIRECIONAMENTO OAUTH 2.0 GOOGLE
-          Direciona a pessoa para a tela oficial de login do Google (accounts.google.com)
-        */
-        const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
-        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=1039861217036-398j9r03b.apps.googleusercontent.com&scope=email%20profile&redirect_uri=${redirectUri}`;
-        
-        // Verifica se o token voltou na URL após o login do Google
-        if (window.location.hash.includes('access_token')) {
-          processarTokenUrl();
-        } else {
-          // Abre a janela oficial de login do Google
-          const popup = window.open(googleAuthUrl, 'GoogleLogin', 'width=500,height=600');
-          
-          if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-            exibirStatus("O navegador bloqueou a janela de popup. Por favor, permita popups para fazer login.", true);
-          } else {
-            // Monitora o retorno da janela
-            const checkPopup = setInterval(() => {
-              try {
-                if (popup.location.hash.includes('access_token')) {
-                  const hash = popup.location.hash.substring(1);
-                  const params = new URLSearchParams(hash);
-                  const accessToken = params.get('access_token');
-                  popup.close();
-                  clearInterval(checkPopup);
-                  
-                  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                  })
-                  .then(r => r.json())
-                  .then(info => validarPermissaoPlanilha(info.email));
-                }
-              } catch (e) {
-                // Cross-origin até o redirecionamento concluir
-              }
-
-              if (popup.closed) {
-                clearInterval(checkPopup);
-                exibirStatus("Autenticação cancelada pelo usuário.", true);
-              }
-            }, 500);
+        // Dispara o prompt nativo do Google
+        google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Renderiza o botão nativo do Google se o prompt não puder exibir
+            document.getElementById("google-native-btn-container").classList.remove("hidden");
+            google.accounts.id.renderButton(
+              document.getElementById("google-native-btn-container"),
+              { theme: "outline", size: "large", width: "100%" }
+            );
           }
+        });
+      } else {
+        exibirStatus("Insira o Client ID do Google no código para ativar a janela oficial.", true);
+      }
+    }
+
+    function handleGoogleJwtResponse(response) {
+      try {
+        const payload = parseJwt(response.credential);
+        if (payload && payload.email) {
+          validarPermissaoPlanilha(payload.email);
+        } else {
+          exibirStatus("Não foi possível extrair o e-mail do token do Google.", true);
         }
+      } catch (e) {
+        exibirStatus("Erro ao processar credencial do Google.", true);
       }
     }
 
     async function fazerLoginMicrosoft() {
-      exibirStatus("Abrindo autenticação oficial da Microsoft...", false, true);
+      if (window.location.protocol === 'file:') {
+        exibirStatus("Para autenticar via Microsoft, envie o index.html ao GitHub Pages (https://)", true);
+        return;
+      }
+
+      exibirStatus("Conectando à Microsoft...", false, true);
 
       if (MICROSOFT_CLIENT_ID && msalInstance) {
         try {
@@ -271,30 +264,12 @@
           exibirStatus("Autenticação Microsoft cancelada ou não concluída.", true);
         }
       } else {
-        /*
-          REDIRECIONAMENTO OAUTH 2.0 MICROSOFT
-          Direciona para a janela oficial de login da Microsoft (login.microsoftonline.com)
-        */
-        const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
-        const msAuthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=00000000-0000-0000-0000-000000000000&response_type=token&redirect_uri=${redirectUri}&scope=user.read%20openid%20email`;
-        
-        const popup = window.open(msAuthUrl, 'MicrosoftLogin', 'width=500,height=600');
-        
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          exibirStatus("Permita os popups no seu navegador para abrir o login da Microsoft.", true);
-        } else {
-          const checkPopup = setInterval(() => {
-            if (popup.closed) {
-              clearInterval(checkPopup);
-              exibirStatus("Janela da Microsoft fechada. Caso tenha feito login, validando...", false, true);
-            }
-          }, 500);
-        }
+        exibirStatus("Insira o Client ID da Microsoft (Azure) no código para ativar a janela oficial.", true);
       }
     }
 
     async function validarPermissaoPlanilha(email) {
-      exibirStatus(`Validando acesso para ${email}...`, false, true);
+      exibirStatus(`Validando e-mail ${email} na planilha...`, false, true);
 
       try {
         const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(email)}`);
@@ -315,7 +290,7 @@
           exibirStatus(resultado.mensagem || "E-mail não autorizado na planilha.", true);
         }
       } catch (erro) {
-        exibirStatus("Erro de conexão com o servidor de permissões.", true);
+        exibirStatus("Erro de conexão com a planilha no Google Apps Script.", true);
       }
     }
 
@@ -331,6 +306,15 @@
         msgDiv.className = "mt-6 text-center text-xs font-semibold text-emerald-400 bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/40 flex items-center justify-center gap-2";
         msgDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${mensagem}</span>`;
       }
+    }
+
+    function parseJwt(token) {
+      var base64Url = token.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
     }
 
     function sair() {
