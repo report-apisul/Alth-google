@@ -64,7 +64,7 @@
             <path fill="#f35325" d="M1 1h10v10H1z"/>
             <path fill="#81bc06" d="M12 1h10v10H12z"/>
             <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-            <path fill="#ffba08" d="M12 12h10v10H1z"/>
+            <path fill="#ffba08" d="M12 12h10v10H12z"/>
           </svg>
           Entrar com a conta Microsoft
         </button>
@@ -129,15 +129,15 @@
 
     // Client ID gerado no Microsoft Azure
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
-    
-    // Captura a URL exata ignorando parâmetros de busca para o Azure não rejeitar
-    const REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
 
-    // Configuração oficial do MSAL para login Microsoft via Pop-up
+    // URL Exata da aplicação cadastrada no Azure
+    const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
+
+    // Configuração oficial do MSAL para suporte a múltiplos locatários (Apisul, Mondelez, etc.)
     const msalConfig = {
       auth: {
         clientId: MICROSOFT_CLIENT_ID,
-        authority: "https://login.microsoftonline.com/common",
+        authority: "https://login.microsoftonline.com/organizations", // Suporta contas corporativas externas
         redirectUri: REDIRECT_URI
       },
       cache: {
@@ -148,7 +148,6 @@
 
     let msalInstance = null;
 
-    // Inicialização assíncrona recomendada para o MSAL v2
     async function initMSAL() {
       if (!msalInstance) {
         msalInstance = new msal.PublicClientApplication(msalConfig);
