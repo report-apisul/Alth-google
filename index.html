@@ -34,7 +34,7 @@
     <!-- VISÃO 1: TELA DE LOGIN AUTÊNTICA E SEGURA -->
     <div id="screen-login" class="bg-slate-800 border border-slate-700/60 rounded-2xl shadow-2xl p-8 transition-all duration-300">
       
-      <!-- Logo / Identidade com a nova imagem Apisul -->
+      <!-- Logo / Identidade com a imagem Apisul -->
       <div class="text-center mb-8">
         <div class="flex items-center justify-center mb-5">
           <img src="https://raw.githubusercontent.com/repositorio-apisul/apisul/main/logo-apisul-branca.png" 
@@ -124,21 +124,30 @@
     // URL oficial da sua implantação do Apps Script
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
 
-    // Client ID gerado no Google Cloud
+    // Client ID do Google Cloud
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
 
-    // Configurações da Microsoft
-    const MICROSOFT_CLIENT_ID = "SEU_MICROSOFT_CLIENT_ID_AQUI";
+    // Client ID gerado no Microsoft Azure
+    const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
+
+    // Configuração oficial do MSAL para login Microsoft via Pop-up
     const msalConfig = {
       auth: {
         clientId: MICROSOFT_CLIENT_ID,
         authority: "https://login.microsoftonline.com/common"
+      },
+      cache: {
+        cacheLocation: "sessionStorage",
+        storeAuthStateInCookie: false
       }
     };
+
     let msalInstance = null;
     try {
       msalInstance = new msal.PublicClientApplication(msalConfig);
-    } catch(e) {}
+    } catch(e) {
+      console.error("Erro MSAL:", e);
+    }
 
     // FUNÇÃO 1: Autenticação via Google SSO
     function fazerLoginGoogle() {
@@ -185,9 +194,9 @@
     async function fazerLoginMicrosoft() {
       const msg = document.getElementById('mensagem-status');
 
-      if (!msalInstance || MICROSOFT_CLIENT_ID.includes("SEU_MICROSOFT_CLIENT_ID")) {
+      if (!msalInstance) {
         msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-        msg.innerText = "Configure o Client ID do Azure para ativar o login Microsoft.";
+        msg.innerText = "Erro ao carregar módulo da Microsoft.";
         return;
       }
 
@@ -198,11 +207,17 @@
         const loginResponse = await msalInstance.loginPopup({
           scopes: ["User.Read", "openid", "profile", "email"]
         });
+        
         const emailVerificado = loginResponse.account.username;
-        consultarPermissaoPlanilha(emailVerificado);
+        if (emailVerificado) {
+          consultarPermissaoPlanilha(emailVerificado);
+        } else {
+          msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
+          msg.innerText = "Não foi possível identificar o e-mail da conta Microsoft.";
+        }
       } catch (error) {
         msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-        msg.innerText = "Autenticação da Microsoft cancelada ou falhou.";
+        msg.innerText = "Autenticação da Microsoft cancelada ou não concluída.";
       }
     }
 
