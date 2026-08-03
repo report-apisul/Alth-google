@@ -119,13 +119,13 @@
   </div>
 
   <script>
-    // URL do seu Google Apps Script implantado
+    // URL oficial da sua implantação do Apps Script
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2bei16mQwFWPMcviEG1RVTH66WChP3tyfuAwxtvX-0PBeFJwKhb1dlW2UDrGpvkVQ8w/exec";
 
-    // Seu Client ID gerado no Google Cloud
+    // Client ID gerado no Google Cloud
     const GOOGLE_CLIENT_ID = "422178001229-dm6o50m26basndm9fcsfnvo0kh7cudel.apps.googleusercontent.com";
 
-    // Configurações do Microsoft MSAL (opcional para Azure)
+    // Configurações da Microsoft
     const MICROSOFT_CLIENT_ID = "SEU_MICROSOFT_CLIENT_ID_AQUI";
     const msalConfig = {
       auth: {
@@ -138,13 +138,12 @@
       msalInstance = new msal.PublicClientApplication(msalConfig);
     } catch(e) {}
 
-    // FUNÇÃO 1: Autenticação via Google SSO (Pop-up Nativo Google)
+    // FUNÇÃO 1: Autenticação via Google SSO
     function fazerLoginGoogle() {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
       msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Conectando ao Google...';
 
-      // Cria o cliente de Token OAuth2 para abrir o pop-up nativo de seleção de conta
       const client = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
@@ -152,13 +151,11 @@
           if (tokenResponse && tokenResponse.access_token) {
             msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Obtendo dados da conta Google...';
             try {
-              // Busca os dados do perfil do usuário logado diretamente da API oficial do Google
               const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                 headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
               });
               const googleUser = await res.json();
               if (googleUser && googleUser.email) {
-                // Envia o e-mail autêntico retornado pelo Google para a planilha no Apps Script
                 consultarPermissaoPlanilha(googleUser.email);
               } else {
                 msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
@@ -179,7 +176,6 @@
         }
       });
 
-      // Solicita o token abrindo a janela pop-up oficial do Google
       client.requestAccessToken();
     }
 
@@ -219,11 +215,9 @@
         const data = await response.json();
 
         if (data.sucesso) {
-          // Transição para a tela de Dashboard
           document.getElementById('screen-login').classList.add('hidden');
           document.getElementById('screen-dashboard').classList.remove('hidden');
 
-          // Popula os dados retornados do usuário
           document.getElementById('user-nome').innerText = data.usuario.nome;
           document.getElementById('user-perfil').innerText = data.usuario.perfil;
           document.getElementById('user-filtro').innerHTML = `<i class="fa-solid fa-filter text-xs"></i> <span>${data.usuario.filtro}</span>`;
