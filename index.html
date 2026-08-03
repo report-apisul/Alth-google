@@ -129,12 +129,14 @@
 
     // Client ID gerado no Microsoft Azure
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
 
     // Configuração oficial do MSAL para login Microsoft via Pop-up
     const msalConfig = {
       auth: {
         clientId: MICROSOFT_CLIENT_ID,
-        authority: "https://login.microsoftonline.com/common"
+        authority: "https://login.microsoftonline.com/common",
+        redirectUri: REDIRECT_URI
       },
       cache: {
         cacheLocation: "sessionStorage",
@@ -205,7 +207,8 @@
 
       try {
         const loginResponse = await msalInstance.loginPopup({
-          scopes: ["User.Read", "openid", "profile", "email"]
+          scopes: ["User.Read", "openid", "profile", "email"],
+          redirectUri: REDIRECT_URI
         });
         
         const emailVerificado = loginResponse.account.username;
@@ -216,6 +219,7 @@
           msg.innerText = "Não foi possível identificar o e-mail da conta Microsoft.";
         }
       } catch (error) {
+        console.error(error);
         msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
         msg.innerText = "Autenticação da Microsoft cancelada ou não concluída.";
       }
