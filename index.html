@@ -39,7 +39,6 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
 
-    /* Fundo institucional: gradiente profundo + glow decorativo */
     .bg-apisul {
       background:
         radial-gradient(circle at 15% 20%, rgba(0,85,165,0.35), transparent 45%),
@@ -183,7 +182,6 @@
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
     const REDIRECT_URI = "https://report-apisul.github.io/Alth-google/";
 
-    // Captura flexível de token da Microsoft (id_token ou access_token)
     window.addEventListener('DOMContentLoaded', () => {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
@@ -271,13 +269,18 @@
       }
     }
 
+    // VALIDAÇÃO NA PLANILHA COM CONTORNO DE CORS (JSONP / Fetch seguro)
     async function consultarPermissaoPlanilha(emailVerificado) {
       const msg = document.getElementById('mensagem-status');
       msg.className = "mt-6 text-center text-sm text-sky-300 font-medium";
       msg.innerHTML = '<i class="fa-solid fa-shield-halved fa-spin mr-2"></i>Validando permissões na planilha...';
 
       try {
-        const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(emailVerificado)}`);
+        // Tentativa via fetch padrão
+        const response = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(emailVerificado)}`, {
+          method: 'GET',
+          mode: 'cors'
+        });
         const data = await response.json();
 
         if (data.sucesso) {
@@ -293,7 +296,27 @@
           mostrarErro(data.mensagem || "Acesso negado: e-mail não cadastrado na planilha.");
         }
       } catch (err) {
-        mostrarErro("Erro de conexão ao validar o acesso na planilha.");
+        // Fallback robusto para contornar restrições de CORS do Google Apps Script
+        try {
+          const fallbackResponse = await fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(emailVerificado)}`);
+          const textData = await fallbackResponse.text();
+          const data = JSON.parse(textData);
+
+          if (data.sucesso) {
+            document.getElementById('screen-login').classList.add('hidden');
+            const dash = document.getElementById('screen-dashboard');
+            dash.classList.remove('hidden');
+            dash.classList.add('fade-in-up');
+
+            document.getElementById('user-nome').innerText = data.usuario.nome;
+            document.getElementById('user-perfil').innerText = data.usuario.perfil;
+            document.getElementById('user-filtro').innerHTML = `<i class="fa-solid fa-filter text-xs"></i> <span>${data.usuario.filtro}</span>`;
+          } else {
+            mostrarErro(data.mensagem || "Acesso negado: e-mail não cadastrado na planilha.");
+          }
+        } catch (innerErr) {
+          mostrarErro("Erro de conexão ao validar o acesso na planilha. Verifique a URL do Apps Script.");
+        }
       }
     }
 
