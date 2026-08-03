@@ -64,7 +64,7 @@
             <path fill="#f35325" d="M1 1h10v10H1z"/>
             <path fill="#81bc06" d="M12 1h10v10H12z"/>
             <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+            <path fill="#ffba08" d="M12 12h10v10H1z"/>
           </svg>
           Entrar com a conta Microsoft
         </button>
@@ -129,7 +129,9 @@
 
     // Client ID gerado no Microsoft Azure
     const MICROSOFT_CLIENT_ID = "c412a8aa-426c-4052-95ac-b02e21e1bbc9";
-    const REDIRECT_URI = window.location.origin + window.location.pathname;
+    
+    // Captura a URL exata ignorando parâmetros de busca para o Azure não rejeitar
+    const REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
 
     // Configuração oficial do MSAL para login Microsoft via Pop-up
     const msalConfig = {
@@ -145,11 +147,15 @@
     };
 
     let msalInstance = null;
-    try {
-      msalInstance = new msal.PublicClientApplication(msalConfig);
-    } catch(e) {
-      console.error("Erro MSAL:", e);
+
+    // Inicialização assíncrona recomendada para o MSAL v2
+    async function initMSAL() {
+      if (!msalInstance) {
+        msalInstance = new msal.PublicClientApplication(msalConfig);
+        await msalInstance.initialize();
+      }
     }
+    initMSAL().catch(console.error);
 
     // FUNÇÃO 1: Autenticação via Google SSO
     function fazerLoginGoogle() {
@@ -195,17 +201,11 @@
     // FUNÇÃO 2: Autenticação via Microsoft SSO
     async function fazerLoginMicrosoft() {
       const msg = document.getElementById('mensagem-status');
-
-      if (!msalInstance) {
-        msg.className = "mt-6 text-center text-sm text-rose-400 font-medium bg-rose-950/40 p-3 rounded-lg border border-rose-800/40";
-        msg.innerText = "Erro ao carregar módulo da Microsoft.";
-        return;
-      }
-
       msg.className = "mt-6 text-center text-sm text-blue-400 font-medium";
       msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Conectando à Microsoft...';
 
       try {
+        await initMSAL();
         const loginResponse = await msalInstance.loginPopup({
           scopes: ["User.Read", "openid", "profile", "email"],
           redirectUri: REDIRECT_URI
